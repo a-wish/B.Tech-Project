@@ -36,7 +36,7 @@ def angular_error(a, b):
     a_norm = np.linalg.norm(a, axis=1)
     b_norm = np.linalg.norm(b, axis=1)
 
-    # Avoid zero-values (to avoid NaNs)
+    
     a_norm = np.clip(a_norm, a_min=1e-7, a_max=None)
     b_norm = np.clip(b_norm, a_min=1e-7, a_max=None)
 
@@ -76,8 +76,7 @@ def tensorflow_angular_error_from_vector(v_true, v_pred):
         sim = tf.div(tf.reduce_sum(tf.multiply(v_true, v_pred), axis=1),
                      tf.multiply(v_true_norm, v_pred_norm))
 
-        # Floating point precision can cause sim values to be slightly outside of
-        # [-1, 1] so we clip values
+        
         sim = tf.clip_by_value(sim, -1.0 + 1e-6, 1.0 - 1e-6)
 
         ang = tf.scalar_mul(radians_to_degrees, tf.acos(sim))
