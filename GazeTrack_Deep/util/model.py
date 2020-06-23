@@ -1,4 +1,4 @@
-from .data_source import BaseDataSource
+from data_source import BaseDataSource
 import os
 import sys
 import time
@@ -147,22 +147,22 @@ class BaseModel(object):
         def _build_train_or_test(mode):
             data_sources = self._train_data if mode == 'train' else self._test_data
 
-            # Build model
+            
             output_tensors, loss_terms, metrics = self.build_model(data_sources, mode=mode)
 
-            # Record important tensors
+            
             self.output_tensors[mode] = output_tensors
             self.loss_terms[mode] = loss_terms
             self.metrics[mode] = metrics
 
-            # Create summaries for scalars
+            
             if mode == 'train':
                 for name, loss_term in loss_terms.items():
                     self.summary.scalar('loss/%s/%s' % (mode, name), loss_term)
                 for name, metric in metrics.items():
                     self.summary.scalar('metric/%s/%s' % (mode, name), metric)
 
-        # Build the main model
+        
         if len(self._train_data) > 0:
             _build_datasource_summaries(self._train_data, mode='train')
             _build_train_or_test(mode='train')
@@ -182,7 +182,7 @@ class BaseModel(object):
                     np.sum([np.prod(v.shape.as_list()) for v in tf.trainable_variables()])
                 )
             )
-            logger.info('------------------------------')
+            
 
         
         
@@ -209,11 +209,11 @@ class BaseModel(object):
             with tf.variable_scope('optimize'):
                 self._build_optimizers()
 
-        # Start pre-processing routines
+        
         for _, datasource in self._train_data.items():
             datasource.create_and_start_threads()
 
-        # Initialize all variables
+        
         self._tensorflow_session.run(tf.global_variables_initializer())
         self._initialized = True
 
@@ -311,38 +311,38 @@ class BaseModel(object):
                 )
                 self.time.end('train_iteration')
 
-                # Print progress
+                
                 to_print = '%07d> ' % current_step
                 to_print += ', '.join(['%s = %g' % (k, v)
                                        for k, v in zip(loss_term_keys, outcome['loss_terms'])])
                 self.time.log_every('train_iteration', to_print, seconds=2)
 
-                # Trigger copy weights & concurrent testing (if not already running)
+                
                 if self._enable_live_testing:
                     self._tester.trigger_test_if_not_testing(current_step)
 
-                # Write summaries
+                
                 if 'summaries' in outcome:
                     self.summary.write_summaries(outcome['summaries'], current_step)
 
-                # Save model weights
+                
                 if self.time.has_been_n_seconds_since_last('save_weights', 600) \
                         and current_step > initial_step:
                     self.checkpoint.save_all(current_step)
 
-                # Extra operations defined in implementation of this base class
+                
                 self.train_loop_post(current_step)
 
         except KeyboardInterrupt:
-            # Handle CTRL-C graciously
+           
             self.checkpoint.save_all(current_step)
             sys.exit(0)
 
-        # Stop live testing, and run final full test
+        
         if self._enable_live_testing:
             self._tester.do_final_full_test(current_step)
 
-        # Save final weights
+        
         if current_step > initial_step:
             self.checkpoint.save_all(current_step)
 
