@@ -184,8 +184,8 @@ class BaseModel(object):
             )
             logger.info('------------------------------')
 
-        # If there are any test data streams, build same model with different scope
-        # Trainable parameters will be copied at test time
+        
+        
         if len(self._test_data) > 0:
             _build_datasource_summaries(self._test_data, mode='test')
             with tf.variable_scope('test'):
@@ -193,11 +193,9 @@ class BaseModel(object):
             logger.info('Built model for live testing.')
 
         if self._enable_live_testing:
-            self._tester._post_model_build()  # Create copy ops to be run before every test run
+            self._tester._post_model_build() 
 
-    def build_model(self, data_sources: Dict[str, BaseDataSource], mode: str):
-        
-        raise NotImplementedError('BaseModel::build_model is not yet implemented.')
+     
 
     def initialize_if_not(self, training=False):
         
