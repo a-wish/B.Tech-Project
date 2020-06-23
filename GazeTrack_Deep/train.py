@@ -5,7 +5,7 @@ import tensorflow as tf
 
 if __name__ == '__main__':
 
-    # Set global log level
+   
     parser = argparse.ArgumentParser(description='Train the Deep Pictorial Gaze model.')
     parser.add_argument('-v', type=str, help='logging level', default='info',
                         choices=['debug', 'info', 'warning', 'error', 'critical'])
@@ -24,8 +24,8 @@ if __name__ == '__main__':
         # Initialize Tensorflow session
         tf.reset_default_graph()
         tf.logging.set_verbosity(tf.logging.ERROR)
-        cpu_options = tf.CPUOptions(allow_growth=True)
-        with tf.Session(config=tf.ConfigProto(cpu_options=cpu_options)) as session:
+        config=tf.ConfigProto(log_device_placement=True)
+        with tf.Session(config=config) as session:
 
             # Declare some parameters
             batch_size = 32
