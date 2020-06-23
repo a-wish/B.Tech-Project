@@ -5,8 +5,8 @@ import numpy as np
 import scipy
 import tensorflow as tf
 
-from core import BaseDataSource, BaseModel
-from datasources import UnityEyes
+from utils import BaseDataSource, BaseModel
+
 import util.gaze
 
 
