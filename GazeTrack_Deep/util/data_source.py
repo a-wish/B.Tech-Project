@@ -105,17 +105,7 @@ class BaseDataSource(object):
         logger.info('Initialized data source: "%s"' % self.short_name)
 
     def __del__(self):
-        """Destruct and clean up instance."""
         self.cleanup()
-
-   
-    @property
-    def short_name(self):
-        
-        
-        raise NotImplementedError('BaseDataSource::short_name not specified.')
-
-    __cleaned_up = False
 
     def cleanup(self):
         
