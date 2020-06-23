@@ -17,23 +17,17 @@ if __name__ == '__main__':
     )
 
     for i in range(0, 15):
-        # Specify which people to train on, and which to test on
+       
         person_id = 'p%02d' % i
         other_person_ids = ['p%02d' % j for j in range(15) if i != j]
 
-        # Initialize Tensorflow session
+        
         tf.reset_default_graph()
         tf.logging.set_verbosity(tf.logging.ERROR)
         config=tf.ConfigProto(log_device_placement=True)
         with tf.Session(config=config) as session:
-
-            # Declare some parameters
             batch_size = 32
-
-            # Define training data source
             from datasources import HDF5Source
-
-            # Define model
             from models import DPG
             model = DPG(
                 session,
@@ -48,7 +42,6 @@ if __name__ == '__main__':
                 ],
                 extra_tags=[person_id],
 
-                # Data sources for training (and testing).
                 train_data={
                     'mpi': HDF5Source(
                         session,
@@ -75,8 +68,6 @@ if __name__ == '__main__':
                     ),
                 },
             )
-
-            # Train this model for a set number of epochs
             model.train(
                 num_epochs=20,
             )
