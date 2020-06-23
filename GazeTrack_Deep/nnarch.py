@@ -1,14 +1,9 @@
-
 from typing import Dict
-
 import numpy as np
 import scipy
 import tensorflow as tf
-
 from utils import BaseDataSource, BaseModel
-
 import util.gaze
-
 
 class DPG(BaseModel):
     
