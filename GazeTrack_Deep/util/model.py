@@ -111,18 +111,12 @@ class BaseModel(object):
         return self.__identifier_stem + self._identifier_suffix
 
     @property
-    def _identifier_suffix(self):
-        """Identifier suffix for model based on data sources and parameters."""
-        return ''
-
-    @property
     def output_path(self):
         =
         return '%s/%s' % (os.path.abspath(os.path.dirname(__file__) + '/../../outputs'),
                           self.identifier)
 
-    def _build_all_models(self):
-        """Build training (GPU/CPU) and testing (CPU) streams."""
+    def _build_all_models(self):      
         self.output_tensors = {}
         self.loss_terms = {}
         self.metrics = {}
@@ -143,7 +137,7 @@ class BaseModel(object):
                             elif shape[3] == 1 or shape[3] == 3:
                                 self.summary.image(summary_name, tensor,
                                                    data_format='channels_last')
-                            # TODO: fix issue with no summary otherwise
+                            
                         elif num_dims == 2:
                             self.summary.histogram(summary_name, tensor)
                         else:
@@ -269,7 +263,7 @@ class BaseModel(object):
                         var_list=variables_to_train,
                         aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N,
                     ))
-                    # gradients, _ = tf.clip_by_global_norm(gradients, 5.0)  # TODO: generalize
+                    # gradients, _ = tf.clip_by_global_norm(gradients, 5.0)  
                     optimize_op = optimizer.apply_gradients(zip(gradients, variables))
                 optimize_ops.append(optimize_op)
             self._optimize_ops.append(optimize_ops)
@@ -357,9 +351,8 @@ class BaseModel(object):
     def inference_generator(self):
         
         self.initialize_if_not(training=False)
-        self.checkpoint.load_all()  # Load available weights
-
-        # TODO: Make more generic by not picking first source
+        self.checkpoint.load_all() 
+        
         data_source = next(iter(self._train_data.values()))
         while True:
             fetches = dict(self.output_tensors['train'], **data_source.output_tensors)
