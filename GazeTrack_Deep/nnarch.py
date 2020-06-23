@@ -16,8 +16,6 @@ class DPG(BaseModel):
         self._hg_num_feature_maps= num_feature_maps
         self._dn_growth_rate = growth_rate
         self._extra_tags = extra_tags
-
-        # Call parent class constructor
         super().__init__(tensorflow_session, **kwargs)
 
     _hg_first_layer_stride = 2
@@ -30,24 +28,6 @@ class DPG(BaseModel):
     _dn_compression_factor = 0.5
     _dn_num_layers_per_block = (4, 4, 4, 4)
     _dn_num_dense_blocks = len(_dn_num_layers_per_block)
-
-    @property
-    def identifier(self):
-        
-        first_data_source = next(iter(self._train_data.values()))
-        input_tensors = first_data_source.output_tensors
-        if self._data_format == 'NHWC':
-            _, eh, ew, _ = input_tensors['eye'].shape.as_list()
-        else:
-            _, _, eh, ew = input_tensors['eye'].shape.as_list()
-        return 'DPG_i%dx%d_f%dx%d_n%d_m%d_k%d_%s' % (
-            ew, eh,
-            int(ew / self._hg_first_layer_stride),
-            int(eh / self._hg_first_layer_stride),
-            self._hg_num_feature_maps, self._hg_num_modules,
-            self._dn_growth_rate,
-            '-'.join(self._extra_tags) if len(self._extra_tags) > 0 else '',
-        )
 
     def train_loop_pre(self, current_step):
         
@@ -94,15 +74,14 @@ class DPG(BaseModel):
         y2 = input_tensors['gaze'] if 'gaze' in input_tensors else None
 
         with tf.variable_scope('input_data'):
-            # self.summary.feature_maps('eyes', x, data_format=self._data_format_longer)
+           
             if y1 is not None:
                 self.summary.feature_maps('gazemaps', y1, data_format=self._data_format_longer)
 
         outputs = {}
         loss_terms = {}
         metrics = {}
-
-        # Lightly augment training data
+        
         x = self._augment_training_images(x, mode)
 
         with tf.variable_scope('hourglass'):
@@ -126,21 +105,18 @@ class DPG(BaseModel):
                     )
                     x_prev = x
             if y1 is not None:
-                # Cross-entropy loss
+                
                 metrics['gazemaps_ce'] = -tf.reduce_mean(tf.reduce_sum(
                     y1 * tf.log(tf.clip_by_value(gmap, 1e-10, 1.0)),  # avoid NaN
                     axis=[1, 2, 3]))
-                # metrics['gazemaps_ce'] = tf.losses.softmax_cross_entropy(
-                #     tf.reshape(y1, (self._batch_size, -1)),
-                #     tf.reshape(gmap, (self._batch_size, -1)),
-                #     loss_collection=None,
-                # )
+                
             x = gmap
             outputs['gazemaps'] = gmap
             self.summary.feature_maps('bottleneck', gmap, data_format=self._data_format_longer)
 
+        #Densenet block to regress to gaze
         with tf.variable_scope('densenet'):
-            # DenseNet blocks to regress to gaze
+            
             for i in range(self._dn_num_dense_blocks):
                 with tf.variable_scope('block%d' % (i + 1)):
                     x = self._apply_dense_block(x,
@@ -150,7 +126,7 @@ class DPG(BaseModel):
                 with tf.variable_scope('trans%d' % (i + 1)):
                     x = self._apply_transition_layer(x)
 
-            # Global average pooling
+            
             with tf.variable_scope('post'):
                 x = self._apply_bn(x)
                 x = tf.nn.relu(x)
@@ -168,11 +144,11 @@ class DPG(BaseModel):
                     metrics['gaze_mse'] = tf.reduce_mean(tf.squared_difference(x, y2))
                     metrics['gaze_ang'] = util.gaze.tensorflow_angular_error_from_pitchyaw(y2, x)
 
-        # Combine two loss terms
+        
         if y1 is not None and y2 is not None:
             loss_terms['combined_loss'] = 1e-5*metrics['gazemaps_ce'] + metrics['gaze_mse']
 
-        # Define outputs
+        
         return outputs, loss_terms, metrics
 
     def _apply_conv(self, tensor, num_features, kernel_size=3, stride=1):
@@ -245,17 +221,17 @@ class DPG(BaseModel):
 
     def _build_hourglass(self, x, steps_to_go, num_features, depth=1):
         with tf.variable_scope('depth%d' % depth):
-            # Upper branch
+            
             up1 = x
             for i in range(self._hg_num_residual_blocks):
                 up1 = self._build_residual_block(up1, num_features, num_features,
                                                  name='up1_%d' % (i + 1))
-            # Lower branch
+            
             low1 = self._apply_pool(x, kernel_size=2, stride=2)
             for i in range(self._hg_num_residual_blocks):
                 low1 = self._build_residual_block(low1, num_features, num_features,
                                                   name='low1_%d' % (i + 1))
-            # Recursive
+            
             low2 = None
             if steps_to_go > 1:
                 low2 = self._build_hourglass(low1, steps_to_go - 1, num_features, depth=depth+1)
@@ -264,12 +240,12 @@ class DPG(BaseModel):
                 for i in range(self._hg_num_residual_blocks):
                     low2 = self._build_residual_block(low2, num_features, num_features,
                                                       name='low2_%d' % (i + 1))
-            # Additional residual blocks
+            
             low3 = low2
             for i in range(self._hg_num_residual_blocks):
                 low3 = self._build_residual_block(low3, num_features, num_features,
                                                   name='low3_%d' % (i + 1))
-            # Upsample
+            
             if self._data_format == 'NCHW':  # convert to NHWC
                 low3 = tf.transpose(low3, (0, 2, 3, 1))
             up2 = tf.image.resize_bilinear(
@@ -304,7 +280,7 @@ class DPG(BaseModel):
                     x_now = self._apply_conv(x_now, self._hg_num_feature_maps, kernel_size=1, stride=1)
                 x_next += x_prev + x_gmaps
 
-        # Perform softmax on gazemaps
+        
         if self._data_format == 'NCHW':
             n, c, h, w = gmap.shape.as_list()
             gmap = tf.reshape(gmap, (n, -1))
