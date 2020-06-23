@@ -15,7 +15,7 @@ class DPG(BaseModel):
 
     def __init__(self, tensorflow_session=None, first_layer_stride=2, num_modules=3,
                  num_feature_maps=32, growth_rate=8, extra_tags=[], **kwargs):
-        """Specify DPG-specific parameters."""
+        
         self._hg_first_layer_stride = first_layer_stride
         self._hg_num_modules = num_modules
         self._hg_num_feature_maps= num_feature_maps
@@ -38,7 +38,7 @@ class DPG(BaseModel):
 
     @property
     def identifier(self):
-        """Identifier for model based on data sources and parameters."""
+        
         first_data_source = next(iter(self._train_data.values()))
         input_tensors = first_data_source.output_tensors
         if self._data_format == 'NHWC':
