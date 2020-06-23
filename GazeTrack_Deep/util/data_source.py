@@ -34,9 +34,7 @@ class BaseDataSource(object):
         self.testing = testing
         if testing:
             assert not shuffle and not staging
-            # if num_threads != 1:
-            #     logger.info('Forcing use of single thread for live testing.')
-            # num_threads = 1
+            
         self.staging = staging
         self.shuffle = shuffle
         self.data_format = data_format.upper()
@@ -47,14 +45,14 @@ class BaseDataSource(object):
         self._coordinator = tf.train.Coordinator()
         self.all_threads = []
 
-        # Setup file read queue
+        
         self._fread_queue_capacity = fread_queue_capacity
         if self._fread_queue_capacity == 0:
             self._fread_queue_capacity = (num_threads + 1) * batch_size
         self._fread_queue = queue.Queue(maxsize=self._fread_queue_capacity)
 
         with tf.variable_scope(''.join(c for c in self.short_name if c.isalnum())):
-            # Setup preprocess queue
+            
             labels, dtypes, shapes = self._determine_dtypes_and_shapes()
             self._preprocess_queue_capacity = (min_after_dequeue + (num_threads + 1) * batch_size
                                                if preprocess_queue_capacity == 0
@@ -110,13 +108,7 @@ class BaseDataSource(object):
         """Destruct and clean up instance."""
         self.cleanup()
 
-    @property
-    def num_entries(self):
-        
-        Used to calculate number of steps to train when asked to be trained for # epochs.
-        """
-        raise NotImplementedError('BaseDataSource::num_entries not specified.')
-
+   
     @property
     def short_name(self):
         
@@ -130,14 +122,14 @@ class BaseDataSource(object):
         if self.__cleaned_up:
             return
 
-        # Clear queues
+        
         fread_threads = [t for t in self.all_threads if t.name.startswith('fread_')]
         preprocess_threads = [t for t in self.all_threads if t.name.startswith('preprocess_')]
         transfer_threads = [t for t in self.all_threads if t.name.startswith('transfer_')]
 
         self._coordinator.request_stop()
 
-        # Unblock any self._fread_queue.put calls
+       
         while True:
             try:
                 self._fread_queue.get_nowait()
@@ -145,7 +137,7 @@ class BaseDataSource(object):
                 break
             time.sleep(0.1)
 
-        # Push data through to trigger exits in preprocess/transfer threads
+        
         for _ in range(self.batch_size * self.num_threads):
             self._fread_queue.put(None)
         self._tensorflow_session.run(self._preprocess_queue_close_op)
@@ -159,13 +151,13 @@ class BaseDataSource(object):
         
         assert self.testing is True
 
-        # Clear queues
+        
         self._coordinator.request_stop()
         with self._fread_queue.mutex:  # Unblock any self._fread_queue.get calls
             self._fread_queue.queue.clear()
         for _ in range(2*self.num_threads):
             self._fread_queue.put(None)
-        while True:  # Unblock any enqueue requests
+        while True:  
             preprocess_queue_size = self._tensorflow_session.run(self._preprocess_queue_size_op)
             if preprocess_queue_size == 0:
                 break
@@ -184,7 +176,7 @@ class BaseDataSource(object):
         self.create_and_start_threads()
 
     def _determine_dtypes_and_shapes(self):
-        """Determine the dtypes and shapes of Tensorflow queue and staging area entries."""
+        
         while True:
             raw_entry = next(self.entry_generator(yield_just_one=True))
             if raw_entry is None:
@@ -238,7 +230,7 @@ class BaseDataSource(object):
                     break
         logger.debug('Exiting thread %s' % threading.current_thread().name)
 
-    def transfer_to_gpu_job(self):
+    def transfer_to_job(self):
         
         while not self._coordinator.should_stop():
             try:
@@ -258,16 +250,16 @@ class BaseDataSource(object):
             self.all_threads.append(thread)
 
         for i in range(self.num_threads):
-            # File read thread
+            
             _create_and_register_thread(target=self.read_entry_job, name='fread_%s_%d' % (name, i))
 
-            # Preprocess thread
+            
             _create_and_register_thread(target=self.preprocess_job,
                                         name='preprocess_%s_%d' % (name, i))
 
         if self.staging:
-            # Send-to-GPU thread
-            _create_and_register_thread(target=self.transfer_to_gpu_job,
+            
+            _create_and_register_thread(target=self.transfer_to_job,
                                         name='transfer_%s_%d' % (name, i))
 
     def start_threads(self):
