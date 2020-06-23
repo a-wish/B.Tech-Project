@@ -6,11 +6,6 @@ from typing import Any, Dict, List
 
 import numpy as np
 import tensorflow as tf
-
-from .live_tester import LiveTester
-from .time_manager import TimeManager
-from .summary_manager import SummaryManager
-from .checkpoint_manager import CheckpointManager
 import logging
 logger = logging.getLogger(__name__)
 
@@ -207,11 +202,11 @@ class BaseModel(object):
             self._tester._post_model_build()  # Create copy ops to be run before every test run
 
     def build_model(self, data_sources: Dict[str, BaseDataSource], mode: str):
-        """Build model."""
+        
         raise NotImplementedError('BaseModel::build_model is not yet implemented.')
 
     def initialize_if_not(self, training=False):
-        """Initialize variables and begin preprocessing threads."""
+        
         if self._initialized:
             return
 
@@ -231,7 +226,7 @@ class BaseModel(object):
         self._initialized = True
 
     def _build_optimizers(self):
-        """Based on learning schedule, create optimizer instances."""
+        
         self._optimize_ops = []
         all_trainable_variables = tf.trainable_variables()
         all_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
