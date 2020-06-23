@@ -179,14 +179,6 @@ class BaseDataSource(object):
         shapes = [value.shape for value in values]
         return labels, dtypes, shapes
 
-    def entry_generator(self, yield_just_one=False):
-        
-        raise NotImplementedError('BaseDataSource::entry_generator not implemented.')
-
-    def preprocess_entry(self, entry):
-        
-        raise NotImplementedError('BaseDataSource::preprocess_entry not implemented.')
-
     def read_entry_job(self):
         
         read_entry = self.entry_generator()
