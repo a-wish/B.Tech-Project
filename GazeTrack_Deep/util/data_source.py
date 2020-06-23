@@ -90,7 +90,7 @@ class BaseDataSource(object):
                     (label, tensor) for label, tensor in zip(labels, output_tensors)
                 ])
             else:
-                # Setup on-GPU staging area
+                
                 self._staging_area = tf.contrib.staging.StagingArea(
                     dtypes=dtypes,
                     shapes=[tuple([batch_size] + list(shape)) for shape in shapes],
