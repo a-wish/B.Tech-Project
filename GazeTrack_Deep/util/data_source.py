@@ -153,7 +153,7 @@ class BaseDataSource(object):
 
         
         self._coordinator.request_stop()
-        with self._fread_queue.mutex:  # Unblock any self._fread_queue.get calls
+        with self._fread_queue.mutex:  
             self._fread_queue.queue.clear()
         for _ in range(2*self.num_threads):
             self._fread_queue.put(None)
@@ -163,7 +163,7 @@ class BaseDataSource(object):
                 break
             self._tensorflow_session.run(self._preprocess_queue_clear_op)
             time.sleep(0.1)
-        while True:  # Unblock any self._fread_queue.put calls
+        while True:  
             try:
                 self._fread_queue.get_nowait()
             except queue.Empty:
@@ -171,7 +171,7 @@ class BaseDataSource(object):
             time.sleep(0.1)
         self._coordinator.join(self.all_threads, stop_grace_period_secs=5)
 
-        # Restart threads
+        
         self._coordinator.clear_stop()
         self.create_and_start_threads()
 
